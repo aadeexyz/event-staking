@@ -2,15 +2,12 @@
 
 pragma solidity 0.8.19;
 
-import "solmate/auth/Owned.sol";
-import "solmate/utils/ReentrancyGuard.sol";
+import {ReentrancyGuard} from "solmate/utils/ReentrancyGuard.sol";
 
-contract EventStaking is Owned, ReentrancyGuard {
+contract EventStaking is ReentrancyGuard {
     uint256 public eventStartTime;
     uint256 public eventEndTime;
     uint256 public totalAmoutRSVPd;
-    uint256 public claimableAmount;
-    uint256 public claimedAmount;
     bool public claimStarted;
 
     struct Guest {
@@ -21,20 +18,15 @@ contract EventStaking is Owned, ReentrancyGuard {
 
     mapping(address => Guest) public guestsMapping;
 
-    constructor(
-        uint256 _eventStartTime,
-        uint256 _eventEndTime
-    ) Owned(msg.sender) {
+    constructor(uint256 _eventStartTime, uint256 _eventEndTime) {
         eventStartTime = _eventStartTime;
         eventEndTime = _eventEndTime;
         totalAmoutRSVPd = 0;
-        claimableAmount = 0;
-        claimedAmount = 0;
         claimStarted = false;
     }
 
     function stakeRSVP() external payable {
-        require(block.timestamp <= eventEndTime, "Event has already ended");
+        require(block.timestamp <= eventStartTime, "Event has already started");
         require(msg.value > 0, "You need to stake some ETH");
 
         guestsMapping[msg.sender] = Guest(
@@ -43,7 +35,6 @@ contract EventStaking is Owned, ReentrancyGuard {
             false
         );
         totalAmoutRSVPd += msg.value;
-        claimableAmount += msg.value;
     }
 
     function attend() external nonReentrant {
@@ -56,8 +47,6 @@ contract EventStaking is Owned, ReentrancyGuard {
         );
 
         guestsMapping[msg.sender].present = true;
-        claimedAmount += guestsMapping[msg.sender].amount;
-        claimableAmount -= guestsMapping[msg.sender].amount;
 
         payable(msg.sender).transfer(guestsMapping[msg.sender].amount);
     }
@@ -72,28 +61,17 @@ contract EventStaking is Owned, ReentrancyGuard {
         require(!guestsMapping[msg.sender].claimed, "You have already claimed");
 
         uint256 amount = (guestsMapping[msg.sender].amount / totalAmoutRSVPd) *
-            claimableAmount;
+            address(this).balance;
 
         guestsMapping[msg.sender].claimed = true;
-        claimedAmount += guestsMapping[msg.sender].amount;
-        claimableAmount -= guestsMapping[msg.sender].amount;
 
         payable(msg.sender).transfer(amount);
     }
 
-    function startClaim() external onlyOwner {
+    function startClaim() external {
         require(block.timestamp >= eventEndTime, "Event has not ended yet");
         require(!claimStarted, "Claim has already started");
 
-        withdrawStuckEther();
         claimStarted = true;
-    }
-
-    function withdrawStuckEther() private {
-        uint256 amount = address(this).balance - claimableAmount;
-
-        if (amount > 0) {
-            payable(msg.sender).transfer(amount);
-        }
     }
 }
