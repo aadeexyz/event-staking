@@ -18,6 +18,11 @@ contract EventStaking is ReentrancyGuard {
 
     mapping(address => Guest) public guestsMapping;
 
+    event RSVPd(address indexed _guest, uint256 _amount);
+    event Attended(address indexed _guest, uint256 _amount);
+    event ClaimStarted();
+    event Claimed(address indexed _guest, uint256 _amount);
+
     constructor(uint256 _eventStartTime, uint256 _eventEndTime) {
         eventStartTime = _eventStartTime;
         eventEndTime = _eventEndTime;
@@ -35,6 +40,8 @@ contract EventStaking is ReentrancyGuard {
             false
         );
         totalAmoutRSVPd += msg.value;
+
+        emit RSVPd(msg.sender, msg.value);
     }
 
     function attend() external nonReentrant {
@@ -49,6 +56,8 @@ contract EventStaking is ReentrancyGuard {
         guestsMapping[msg.sender].present = true;
 
         payable(msg.sender).transfer(guestsMapping[msg.sender].amount);
+
+        emit Attended(msg.sender, guestsMapping[msg.sender].amount);
     }
 
     function claim() external nonReentrant {
@@ -66,6 +75,8 @@ contract EventStaking is ReentrancyGuard {
         guestsMapping[msg.sender].claimed = true;
 
         payable(msg.sender).transfer(amount);
+
+        emit Claimed(msg.sender, amount);
     }
 
     function startClaim() external {
@@ -73,5 +84,7 @@ contract EventStaking is ReentrancyGuard {
         require(!claimStarted, "Claim has already started");
 
         claimStarted = true;
+
+        emit ClaimStarted();
     }
 }
