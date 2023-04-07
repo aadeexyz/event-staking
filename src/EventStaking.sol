@@ -23,8 +23,8 @@ contract EventStaking is ReentrancyGuard {
 
     event RSVPd(address indexed _guest, uint256 _amount);
     event Attended(address indexed _guest, uint256 _amount);
-    event ClaimStarted();
     event Claimed(address indexed _guest, uint256 _amount);
+    event ClaimStarted();
 
     constructor(uint256 _eventStartTime, uint256 _eventEndTime) {
         eventStartTime = _eventStartTime;
