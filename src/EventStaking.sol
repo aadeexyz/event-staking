@@ -3,8 +3,11 @@
 pragma solidity 0.8.19;
 
 import {ReentrancyGuard} from "solmate/utils/ReentrancyGuard.sol";
+import {SafeTransferLib} from "solmate/utils/SafeTransferLib.sol";
 
 contract EventStaking is ReentrancyGuard {
+    using SafeTransferLib for address;
+
     uint256 public eventStartTime;
     uint256 public eventEndTime;
     uint256 public totalAmoutRSVPd;
@@ -55,7 +58,7 @@ contract EventStaking is ReentrancyGuard {
 
         guestsMapping[msg.sender].present = true;
 
-        payable(msg.sender).transfer(guestsMapping[msg.sender].amount);
+        msg.sender.safeTransferETH(guestsMapping[msg.sender].amount);
 
         emit Attended(msg.sender, guestsMapping[msg.sender].amount);
     }
@@ -74,7 +77,7 @@ contract EventStaking is ReentrancyGuard {
 
         guestsMapping[msg.sender].claimed = true;
 
-        payable(msg.sender).transfer(amount);
+        msg.sender.safeTransferETH(amount);
 
         emit Claimed(msg.sender, amount);
     }
